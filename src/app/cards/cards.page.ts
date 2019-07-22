@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Plugins } from '@capacitor/core';
+const { SplashScreen } = Plugins;
 
 import { CardsService } from './cards.service';
 import { Card } from './card.models';
@@ -9,7 +11,7 @@ import { Subscription } from 'rxjs';
   templateUrl: './cards.page.html',
   styleUrls: ['./cards.page.scss'],
 })
-export class CardsPage implements OnInit {
+export class CardsPage implements OnInit, OnDestroy {
   savedCards: Card[];
   cardsUpdated: Subscription;
 
@@ -18,6 +20,13 @@ export class CardsPage implements OnInit {
   ngOnInit() {
     this.savedCards = this.cardService.getSavedCards();
     this.cardsUpdated = this.cardService.getSubject().subscribe(cards => this.savedCards = cards);
+    // Hide the splash (you should do this on app launch)
+    SplashScreen.hide();
+
+  }
+
+  ngOnDestroy(): void {
+    this.cardsUpdated.unsubscribe();
   }
 
 }

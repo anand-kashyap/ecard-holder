@@ -24,6 +24,7 @@ node_modules/
 tmp/
 temp/
 e2e
+android
 platforms/
 plugins/
 plugins/android.json

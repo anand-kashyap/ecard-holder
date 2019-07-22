@@ -4,6 +4,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { Card, CCard } from './../card.models';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-add-card',
@@ -20,7 +21,7 @@ export class AddCardPage implements OnInit {
   });
   cardValidations = CARD_VALIDATIONS;
 
-  constructor(private cardsService: CardsService) { }
+  constructor(private cardsService: CardsService, private router: Router) { }
 
   ngOnInit() {
   }
@@ -38,6 +39,7 @@ export class AddCardPage implements OnInit {
       const newCard: Card = new CCard(card);
       // newCard.cardId = 3;
       this.cardsService.addCard(newCard);
+      this.router.navigate(['/']);
     } else {
       this.cardsService.markFieldsAsDirty(this.addCardForm);
     }
