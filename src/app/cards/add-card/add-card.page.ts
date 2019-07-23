@@ -34,12 +34,16 @@ export class AddCardPage implements OnInit {
     if (this.addCardForm.valid) {
       console.log(this.addCardForm.value);
       const card = this.addCardForm.value;
-      card.cardId = this.cardsService.getSavedCards().length + 1;
-      console.log('submitted');
-      const newCard: Card = new CCard(card);
-      // newCard.cardId = 3;
-      this.cardsService.addCard(newCard);
-      this.router.navigate(['/']);
+      // card.cardId = this.cardsService.getSavedCards().length + 1;
+      this.cardsService.getSavedCards().then(cards => {
+        card.cardId = cards.length + 1;
+        console.log('submitted');
+        const newCard: Card = new CCard(card);
+        // newCard.cardId = 3;
+        this.cardsService.addCard(newCard).then(res => {
+          this.router.navigate(['/']);
+        });
+      });
     } else {
       this.cardsService.markFieldsAsDirty(this.addCardForm);
     }

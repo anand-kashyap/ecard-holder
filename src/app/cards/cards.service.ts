@@ -2,64 +2,53 @@ import { Injectable } from '@angular/core';
 import { Card } from './card.models';
 import { ToastController } from '@ionic/angular';
 import { Subject } from 'rxjs';
+import { Plugins } from '@capacitor/core';
+import * as CapacitorSQLPlugin from 'capacitor-data-storage-sqlite';
+
+const { Clipboard, CapacitorDataStorageSqlite, Device } = Plugins;
 
 @Injectable({
   providedIn: 'root'
 })
 export class CardsService {
-  private savedCards: Card[] = [
-    {
-      cardId: 1,
-      cardNumber: 1234567890123456,
-      expiryDate: '03/23',
-      cvv: 123,
-      holderName: 'Test Holder',
-      cardNickName: 'First Test Card'
-    },
-    {
-      cardId: 2,
-      cardNumber: 4234567890123456,
-      expiryDate: '11/21',
-      cvv: 323,
-      holderName: 'Second Test Holder',
-      cardNickName: 'Second Test Card'
-    },
-  ];
 
   savedCardsLive = new Subject<Card[]>();
 
-  constructor(private toastController: ToastController) { }
+  constructor(private toastController: ToastController) {
+   }
 
-  getSavedCards(): Card[] {
-    return [...this.savedCards];
+  getSavedCards(): Promise<Card[]> {
+    return this.getFromStorage('cards', true).then(cards => {
+      // this.savedCards = cards;
+      if (cards === null) {
+        return [];
+      }
+      return [...cards];
+    });
   }
 
-  addCard(newCard: Card): Card[] {
-    this.savedCards.push(newCard);
-    this.savedCardsLive.next([...this.savedCards]);
-    return [...this.savedCards];
+  addCard(newCard: Card) {
+    return this.getSavedCards().then(cardArr => {
+      cardArr.push(newCard);
+      return this.saveToStorage('cards', cardArr).then(cards => this.savedCardsLive.next([...cards]));
+    });
+    // this.savedCards.push(newCard);
+    // this.savedCardsLive.next([...this.savedCards]);
+    // return [...this.savedCards];
   }
 
   getSubject() {
     return this.savedCardsLive.asObservable();
   }
 
-  getCardDetail(cardId: number) {
-    return {...this.savedCards.find(c => c.cardId === cardId)};
+  getCardDetail(cardId: number): Promise<Card> {
+    return this.getSavedCards().then(cards => cards.find(c => c.cardId === cardId));
   }
 
   copyToClipboard(val: string) {
-    const selBox = document.createElement('textarea');
-    selBox.style.position = 'fixed';
-    selBox.style.left = '0';
-    selBox.style.top = '0';
-    selBox.style.opacity = '0';
-    selBox.value = val;
-    document.body.appendChild(selBox);
-    selBox.focus();
-    selBox.select();
-    document.execCommand('copy');
-    document.body.removeChild(selBox);
+    Clipboard.write({
+      string: val
+    });
   }
 
   showToast() {
@@ -95,6 +84,39 @@ export class CardsService {
       const control = formGroup.get(formControl);
       control.markAsDirty({ onlySelf: true });
     });
+  }
+
+  async getStorage() {
+    let storage: any = {};
+    const info = await Device.getInfo();
+    console.log('platform ', info.platform);
+    if (info.platform === 'ios' || info.platform === 'android') {
+      storage = CapacitorDataStorageSqlite;
+    } else {
+      storage = CapacitorSQLPlugin.CapacitorDataStorageSqlite;
+    }
+    return storage;
+  }
+
+  async saveToStorage(key: string, value: any, isString = false) {
+    const storage = await this.getStorage();
+    let json;
+    if (!isString) {
+      json = value;
+      value = JSON.stringify(value);
+    }
+    await storage.set({key, value});
+    return json;
+  }
+
+  async getFromStorage(key: string, json = false) {
+    const storage = await this.getStorage();
+    const result = await storage.get({key});
+    // console.log('result ', result);
+    if (result.value !== null && json) {
+      return JSON.parse(result.value);
+    }
+    return result.value;
   }
 
 }

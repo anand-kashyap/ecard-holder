@@ -24,7 +24,7 @@ export class CardDetailPage implements OnInit {
         return;
       }
       const cardId = parseInt(params.get('cardId'), 10);
-      this.loadedCard = this.cardsService.getCardDetail(cardId);
+      this.cardsService.getCardDetail(cardId).then(card => this.loadedCard = card);
       console.log(this.loadedCard);
     });
   }
